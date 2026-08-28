@@ -1,5 +1,4 @@
 <x-app-layout>
-<<<<<<< HEAD
 {{--
     ============================================================================
     CATATAN UNTUK DEVELOPER LAIN YANG BUKA FILE INI:
@@ -40,21 +39,18 @@
     @keyframes radar-ping { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(3); opacity: 0; } }
     .animate-radar { animation: radar-ping 2s cubic-bezier(0,0,0.2,1) infinite; }
 
-    /* Custom vertical slider (dipakai untuk Speed & Steering, gaya sama seperti mockup Control) */
     .v-slider-track { width: 8px; border-radius: 9999px; background: var(--c-surface-container-highest); overflow: hidden; position: relative; }
     .v-slider-fill { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--c-primary); transition: height .06s linear; }
     .v-slider-input { -webkit-appearance: slider-vertical; appearance: slider-vertical; position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
     .v-slider-thumb { position: absolute; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; border-radius: 9999px; background: #fff; border: 2px solid var(--c-primary); box-shadow: 0 2px 4px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; pointer-events: none; transition: bottom .06s linear; }
 </style>
 
-    {{-- ============ TOP APP BAR ============ --}}
     <header class="w-full sticky top-0 z-40 bg-[#f8f9fa] shadow-sm flex items-center justify-between px-4 md:px-8 h-16">
         <div class="flex items-center gap-2">
             <span class="material-symbols-outlined" style="color:var(--c-primary); font-variation-settings:'FILL' 1;">directions_boat</span>
             <h1 class="text-2xl font-semibold" style="color:var(--c-primary);">BoatControl</h1>
         </div>
 
-        {{-- Desktop nav --}}
         <nav class="hidden md:flex items-center gap-2">
             <button @click="activeTab='control'" class="px-3 py-2 rounded-lg text-sm font-semibold transition"
                     :style="activeTab==='control' ? 'color:var(--c-primary); background:var(--c-secondary-container);' : 'color:var(--c-on-surface-variant);'">Control</button>
@@ -67,7 +63,6 @@
         </nav>
     </header>
 
-    {{-- ============ ESP32 CONNECTION BAR ============ --}}
     <div class="max-w-4xl mx-auto px-4 md:px-8 pt-4">
         <div class="bg-white rounded-xl ambient-shadow p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between border" style="border-color:var(--c-surface-container-highest);">
             <div class="flex items-center gap-2">
@@ -85,10 +80,8 @@
         </div>
     </div>
 
-    {{-- ============ MAIN CONTENT ============ --}}
     <main class="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 pb-28 md:pb-10 flex flex-col gap-6">
 
-    {{-- ===================== TAB 1: CONTROL ===================== --}}
     <section x-show="activeTab==='control'" class="flex flex-col gap-4">
 
         <div class="grid grid-cols-2 gap-4">
@@ -104,11 +97,9 @@
             </button>
         </div>
 
-        {{-- Dua slider vertikal berdampingan: Speed (kiri) & Steering (kanan) --}}
         <div class="bg-white rounded-xl ambient-shadow p-4 flex flex-col items-center gap-4">
             <div class="grid grid-cols-2 gap-4 w-full">
 
-                {{-- SPEED SLIDER --}}
                 <div class="flex flex-col items-center gap-2">
                     <h2 class="text-base font-semibold" style="color:var(--c-on-surface);">Forward Speed</h2>
                     <span class="text-sm" style="color:var(--c-outline);" x-text="speed"></span>
@@ -128,7 +119,6 @@
                     </div>
                 </div>
 
-                {{-- STEERING SLIDER (custom, auto-center saat dilepas) --}}
                 <div class="flex flex-col items-center gap-2">
                     <h2 class="text-base font-semibold" style="color:var(--c-on-surface);">Steering</h2>
                     <span class="text-sm" style="color:var(--c-outline);" x-text="steering + '\u00b0'"></span>
@@ -153,7 +143,6 @@
         </div>
     </section>
 
-    {{-- ===================== TAB 2: TELEMETRY ===================== --}}
     <section x-show="activeTab==='telemetry'" class="flex flex-col gap-6">
         <header class="flex items-center justify-between">
             <div>
@@ -206,11 +195,9 @@
         </div>
     </section>
 
-    {{-- ===================== TAB 3: MAP ===================== --}}
     <section x-show="activeTab==='map'" class="flex flex-col gap-3">
         <div class="bg-white rounded-xl ambient-shadow overflow-hidden border" style="border-color:var(--c-surface-container);">
             <div class="relative w-full h-[420px] bg-map-pattern">
-                {{-- Overlay info (gaya sama seperti mockup, isi jujur: belum ada GPS) --}}
                 <div class="absolute top-4 left-4 z-20">
                     <div class="bg-white rounded-xl ambient-shadow p-4 flex flex-col gap-2 border min-w-[220px]" style="border-color:var(--c-surface-container-highest);">
                         <div class="flex items-center justify-between">
@@ -228,13 +215,11 @@
                     </div>
                 </div>
 
-                {{-- USV marker + radar ping, style dari mockup --}}
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center pointer-events-none">
                     <div class="absolute w-12 h-12 rounded-full animate-radar" style="background:rgba(53,37,205,0.2);"></div>
                     <div class="relative w-4 h-4 rounded-full border-2 border-white ambient-shadow z-10" style="background:var(--c-primary);"></div>
                 </div>
 
-                {{-- Zoom controls (dekoratif, sesuai mockup) --}}
                 <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
                     <button class="w-10 h-10 bg-white rounded-xl ambient-shadow flex items-center justify-center border" style="border-color:var(--c-surface-container-highest); color:var(--c-on-surface-variant);">
                         <span class="material-symbols-outlined text-[20px]">add</span>
@@ -247,7 +232,6 @@
         </div>
     </section>
 
-    {{-- ===================== TAB 4: SYSTEM ===================== --}}
     <section x-show="activeTab==='system'" class="flex flex-col gap-6">
         <header>
             <h2 class="text-2xl font-bold" style="color:var(--c-on-surface);">System Diagnostics</h2>
@@ -285,7 +269,6 @@
 
     </main>
 
-    {{-- ============ BOTTOM NAV (MOBILE) - sesuai mockup persis ============ --}}
     <nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t" style="border-color:var(--c-surface-container-high);">
         <button @click="activeTab='control'" class="flex flex-col items-center justify-center rounded-xl px-4 py-1 transition"
                 :style="activeTab==='control' ? 'background:var(--c-secondary-container); color:var(--c-on-secondary-container);' : 'color:var(--c-on-surface-variant);'">
@@ -442,21 +425,3 @@ function usvDashboard() {
 }
 </script>
 </x-app-layout>
-=======
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    {{ __("You're logged in!") }}
-                </div>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
->>>>>>> 26bce98a8f8cefe8587581fa40afc965acb43053
