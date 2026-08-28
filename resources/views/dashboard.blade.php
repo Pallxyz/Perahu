@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-layouts.usv>
 {{--
     ============================================================================
     KERANGKA DASHBOARD - file ini cuma berisi shell (header, connection bar,
@@ -236,4 +236,4 @@ function usvDashboard() {
     };
 }
 </script>
-</x-app-layout>
+</x-layouts.usv>
