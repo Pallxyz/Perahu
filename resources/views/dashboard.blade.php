@@ -40,7 +40,7 @@
     <header class="w-full sticky top-0 z-40 bg-[#f8f9fa] shadow-sm flex items-center justify-between px-4 md:px-8 h-16">
         <div class="flex items-center gap-2">
             <span class="material-symbols-outlined" style="color:var(--c-primary); font-variation-settings:'FILL' 1;">directions_boat</span>
-            <h1 class="text-2xl font-semibold" style="color:var(--c-primary);">BoatControl</h1>
+            <h1 class="text-2xl font-semibold" style="color:var(--c-primary);">NauTech</h1>
         </div>
 
         <nav class="hidden md:flex items-center gap-2">
