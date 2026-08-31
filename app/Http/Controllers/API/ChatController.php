@@ -79,7 +79,7 @@ PROMPT;
             'Authorization' => "Bearer {$apiKey}",
             'Content-Type'  => 'application/json',
         ])->post('https://api.groq.com/openai/v1/chat/completions', [
-            'model'      => 'llama-3.3-70b-versatile',
+            'model'      => 'openai/gpt-oss-120b',
             'messages'   => $messages,
             'max_tokens' => 1024,
         ]);
