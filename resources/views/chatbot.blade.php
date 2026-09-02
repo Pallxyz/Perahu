@@ -1,11 +1,18 @@
-w<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
+
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asisten AI Perahu IoT</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             height: 100vh;
             background: #0b1b2b;
@@ -45,9 +52,17 @@ w<!DOCTYPE html>
             position: relative;
             animation: bob 3s ease-in-out infinite;
         }
+
         @keyframes bob {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-14px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-14px);
+            }
         }
 
         .char-body {
@@ -56,7 +71,7 @@ w<!DOCTYPE html>
             border-radius: 50%;
             background: linear-gradient(160deg, #3b82f6, #1d4ed8);
             position: relative;
-            box-shadow: 0 20px 60px rgba(59,130,246,0.35);
+            box-shadow: 0 20px 60px rgba(59, 130, 246, 0.35);
         }
 
         .eyes {
@@ -67,6 +82,7 @@ w<!DOCTYPE html>
             display: flex;
             gap: 44px;
         }
+
         .eye {
             width: 26px;
             height: 26px;
@@ -74,9 +90,18 @@ w<!DOCTYPE html>
             border-radius: 50%;
             animation: blink 4.5s infinite;
         }
+
         @keyframes blink {
-            0%, 92%, 100% { transform: scaleY(1); }
-            95% { transform: scaleY(0.1); }
+
+            0%,
+            92%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            95% {
+                transform: scaleY(0.1);
+            }
         }
 
         .mouth {
@@ -90,12 +115,25 @@ w<!DOCTYPE html>
             border-radius: 20px;
             transition: all 0.12s ease;
         }
+
         .character.talking .mouth {
             animation: talk 0.28s infinite;
         }
+
         @keyframes talk {
-            0%, 100% { height: 14px; width: 60px; border-radius: 20px; }
-            50% { height: 34px; width: 42px; border-radius: 50%; }
+
+            0%,
+            100% {
+                height: 14px;
+                width: 60px;
+                border-radius: 20px;
+            }
+
+            50% {
+                height: 34px;
+                width: 42px;
+                border-radius: 50%;
+            }
         }
 
         .ring {
@@ -105,12 +143,21 @@ w<!DOCTYPE html>
             border: 2px solid #7fd4ff;
             opacity: 0;
         }
+
         .character.talking .ring {
             animation: pulse-ring 1s infinite;
         }
+
         @keyframes pulse-ring {
-            0% { opacity: 0.7; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.25); }
+            0% {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.25);
+            }
         }
 
         .char-name {
@@ -119,6 +166,7 @@ w<!DOCTYPE html>
             font-weight: 600;
             color: #7fd4ff;
         }
+
         .char-hint {
             margin-top: 4px;
             font-size: 13px;
@@ -161,19 +209,25 @@ w<!DOCTYPE html>
             font-size: 14px;
             line-height: 1.4;
         }
+
         .bubble.user {
             align-self: flex-end;
             background: #3b82f6;
             color: #06121f;
             border-bottom-right-radius: 4px;
         }
+
         .bubble.bot {
             align-self: flex-start;
             background: #1e3a52;
             color: #eaf2f8;
             border-bottom-left-radius: 4px;
         }
-        .bubble.typing { color: #93a8bd; font-style: italic; }
+
+        .bubble.typing {
+            color: #93a8bd;
+            font-style: italic;
+        }
 
         .input-bar {
             display: flex;
@@ -181,6 +235,7 @@ w<!DOCTYPE html>
             padding: 14px;
             border-top: 1px solid #1e3a52;
         }
+
         .input-bar input {
             flex: 1;
             padding: 12px 14px;
@@ -191,7 +246,11 @@ w<!DOCTYPE html>
             font-size: 14px;
             outline: none;
         }
-        .input-bar input:focus { box-shadow: 0 0 0 2px #3b82f6; }
+
+        .input-bar input:focus {
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+
         .input-bar button {
             padding: 0 18px;
             border: none;
@@ -201,150 +260,191 @@ w<!DOCTYPE html>
             font-weight: bold;
             cursor: pointer;
         }
-        .input-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .input-bar button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         @media (max-width: 760px) {
-            body { flex-direction: column; }
-            .chat-panel { width: 100%; min-width: 0; height: 45vh; }
-            .stage { height: 55vh; }
-            .character { width: 180px; height: 180px; }
+            body {
+                flex-direction: column;
+            }
+
+            .chat-panel {
+                width: 100%;
+                min-width: 0;
+                height: 45vh;
+            }
+
+            .stage {
+                height: 55vh;
+            }
+
+            .character {
+                width: 180px;
+                height: 180px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="stage">
-    <div class="stage-status" id="statusText">Siap membantu</div>
-    <div class="character" id="character">
-        <div class="ring"></div>
-        <div class="char-body">
-            <div class="eyes">
-                <div class="eye"></div>
-                <div class="eye"></div>
+    <div class="stage">
+        <div class="stage-status" id="statusText">Siap membantu</div>
+        <div class="character" id="character">
+            <div class="ring"></div>
+            <div class="char-body">
+                <div class="eyes">
+                    <div class="eye"></div>
+                    <div class="eye"></div>
+                </div>
+                <div class="mouth"></div>
             </div>
-            <div class="mouth"></div>
+        </div>
+        <div class="char-name">Asisten Perahu IoT</div>
+        <div class="char-hint">Tanya apa aja soal komponen, cara kontrol, atau perawatan produk ini</div>
+    </div>
+
+    <div class="chat-panel">
+        <div class="chat-header">Chat</div>
+        <div class="messages" id="messages"></div>
+        <div class="input-bar">
+            <input type="text" id="messageInput" placeholder="Tulis pesan..." autocomplete="off">
+            <button id="sendBtn">Kirim</button>
         </div>
     </div>
-    <div class="char-name">Asisten Perahu IoT</div>
-    <div class="char-hint">Tanya apa aja soal komponen, cara kontrol, atau perawatan produk ini</div>
-</div>
 
-<div class="chat-panel">
-    <div class="chat-header">Chat</div>
-    <div class="messages" id="messages"></div>
-    <div class="input-bar">
-        <input type="text" id="messageInput" placeholder="Tulis pesan..." autocomplete="off">
-        <button id="sendBtn">Kirim</button>
-    </div>
-</div>
-
-<script>
-    // ================== KONFIGURASI DEVELOPER ==================
-    const API_URL = "/api/chat";
-
-    const VOICE_CONFIG = {
-        lang: "id-ID",
-        rate: 1.0,
-        pitch: 1.0,
-        volume: 1.0,
-        preferredVoiceName: "Google Bahasa Indonesia"
-    };
-    // =============================================================
-
-    const sessionId = localStorage.getItem("perahu_session_id") ||
-        (() => {
-            const id = "sesi-" + Math.random().toString(36).slice(2, 10);
-            localStorage.setItem("perahu_session_id", id);
-            return id;
-        })();
-
-    const messagesEl = document.getElementById("messages");
-    const inputEl = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const characterEl = document.getElementById("character");
-    const statusEl = document.getElementById("statusText");
-
-    function addBubble(text, role) {
-        const div = document.createElement("div");
-        div.className = "bubble " + role;
-        div.textContent = text;
-        messagesEl.appendChild(div);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        return div;
-    }
-
-    function speak(text) {
-        if (!("speechSynthesis" in window)) return;
-        window.speechSynthesis.cancel();
-
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = VOICE_CONFIG.lang;
-        utter.rate = VOICE_CONFIG.rate;
-        utter.pitch = VOICE_CONFIG.pitch;
-        utter.volume = VOICE_CONFIG.volume;
-
-        const voices = window.speechSynthesis.getVoices();
-        const preferred = voices.find(v => v.name === VOICE_CONFIG.preferredVoiceName)
-                       || voices.find(v => v.lang === VOICE_CONFIG.lang);
-        if (preferred) utter.voice = preferred;
-
-        utter.onstart = () => {
-            characterEl.classList.add("talking");
-            statusEl.textContent = "Berbicara...";
+    <script>
+        // ================== KONFIGURASI DEVELOPER ==================
+        const API_URL = "{{ url('/api/chat') }}";
+        const VOICE_CONFIG = {
+            lang: "id-ID",
+            rate: 1.0,
+            pitch: 1.0,
+            volume: 1.0,
+            preferredVoiceName: "Google Bahasa Indonesia"
         };
-        utter.onend = () => {
-            characterEl.classList.remove("talking");
-            statusEl.textContent = "Siap membantu";
-        };
+        // =============================================================
 
-        window.speechSynthesis.speak(utter);
-    }
+        const sessionId = localStorage.getItem("perahu_session_id") ||
+            (() => {
+                const id = "sesi-" + Math.random().toString(36).slice(2, 10);
+                localStorage.setItem("perahu_session_id", id);
+                return id;
+            })();
 
-    async function sendMessage() {
-        const text = inputEl.value.trim();
-        if (!text) return;
+        const messagesEl = document.getElementById("messages");
+        const inputEl = document.getElementById("messageInput");
+        const sendBtn = document.getElementById("sendBtn");
+        const characterEl = document.getElementById("character");
+        const statusEl = document.getElementById("statusText");
 
-        addBubble(text, "user");
-        inputEl.value = "";
-        sendBtn.disabled = true;
-
-        const typingBubble = addBubble("Mengetik...", "bot typing");
-        statusEl.textContent = "Berpikir...";
-
-        try {
-            const res = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text, session_id: sessionId })
-            });
-            const data = await res.json();
-            typingBubble.remove();
-
-            if (!res.ok) {
-                addBubble(data.error || "Maaf, terjadi kesalahan.", "bot");
-                statusEl.textContent = "Siap membantu";
+        function addBubble(text, role) {
+            const div = document.createElement("div");
+            div.className = "bubble " + role;
+            if (role.includes("bot")) {
+                div.innerHTML = marked.parse(text); // render markdown ke HTML
             } else {
-                addBubble(data.reply, "bot");
-                speak(data.reply);
+                div.textContent = text; // pesan user tetap plain text (lebih aman)
             }
-        } catch (err) {
-            typingBubble.remove();
-            addBubble("Gagal terhubung ke server. Pastikan backend sedang berjalan.", "bot");
-            statusEl.textContent = "Koneksi gagal";
-        } finally {
-            sendBtn.disabled = false;
-            inputEl.focus();
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return div;
         }
-    }
 
-    sendBtn.addEventListener("click", sendMessage);
-    inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+        function speak(text) {
+            if (!("speechSynthesis" in window)) return;
+            window.speechSynthesis.cancel();
 
-    addBubble("Halo! Aku asisten produk perahu kendali jarak jauh ini. Mau tanya soal apa?", "bot");
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = VOICE_CONFIG.lang;
+            utter.rate = VOICE_CONFIG.rate;
+            utter.pitch = VOICE_CONFIG.pitch;
+            utter.volume = VOICE_CONFIG.volume;
 
-    if ("speechSynthesis" in window) {
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    }
-</script>
+            const voices = window.speechSynthesis.getVoices();
+            const preferred = voices.find(v => v.name === VOICE_CONFIG.preferredVoiceName) ||
+                voices.find(v => v.lang === VOICE_CONFIG.lang);
+            if (preferred) utter.voice = preferred;
+
+            utter.onstart = () => {
+                characterEl.classList.add("talking");
+                statusEl.textContent = "Berbicara...";
+            };
+            utter.onend = () => {
+                characterEl.classList.remove("talking");
+                statusEl.textContent = "Siap membantu";
+            };
+
+            window.speechSynthesis.speak(utter);
+        }
+
+        async function sendMessage() {
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            addBubble(text, "user");
+            inputEl.value = "";
+            sendBtn.disabled = true;
+
+            const typingBubble = addBubble("Mengetik...", "bot typing");
+            statusEl.textContent = "Berpikir...";
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: text,
+                        session_id: sessionId
+                    })
+                });
+
+                const rawText = await res.text();
+                typingBubble.remove();
+
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (parseErr) {
+                    addBubble(`[DEBUG] Status: ${res.status}. Respons bukan JSON:\n\n${rawText.slice(0, 500)}`, "bot");
+                    statusEl.textContent = "Siap membantu";
+                    return;
+                }
+
+                if (!res.ok) {
+                    addBubble(`[DEBUG] Status ${res.status}: ` + (data.error || JSON.stringify(data)), "bot");
+                    statusEl.textContent = "Siap membantu";
+                } else {
+                    addBubble(data.reply, "bot");
+                    speak(data.reply);
+                }
+            } catch (err) {
+                typingBubble.remove();
+                addBubble("[DEBUG] Fetch gagal total: " + err.message, "bot");
+                statusEl.textContent = "Koneksi gagal";
+            } finally {
+                sendBtn.disabled = false;
+                inputEl.focus();
+            }
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        inputEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        addBubble("Halo! Aku asisten produk perahu kendali jarak jauh ini. Mau tanya soal apa?", "bot");
+
+        if ("speechSynthesis" in window) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+    </script>
 </body>
+
 </html>
