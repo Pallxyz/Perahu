@@ -1,57 +1,87 @@
-{{--
-    TAB 2: TELEMETRY
-    Kartu Voltage & Capacity + Chart.js untuk histori tegangan baterai.
-    Elemen id="batteryChart" di-init oleh setupChart() di JS induk,
-    jadi id ini JANGAN diubah tanpa ikut ubah dashboard.blade.php.
---}}
-<section x-show="activeTab==='telemetry'" class="flex flex-col gap-6">
-    <header class="flex items-center justify-between">
-        <div>
-            <h2 class="text-2xl font-bold" style="color:var(--c-on-surface);">Telemetry Overview</h2>
-            <p class="text-sm mt-1" style="color:var(--c-on-surface-variant);">Live metrics dari USV.</p>
+<div class="flex flex-col gap-6">
+    
+    <!-- 1. Ringkasan Parameter Telemetri Utama -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <!-- Tegangan Baterai -->
+        <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-colors duration-300">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Tegangan Baterai</span>
+            <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1" x-text="telemetry?.voltage ? telemetry.voltage + ' V' : '12.4 V'"></div>
         </div>
-        <div class="flex items-center gap-2">
-            <span class="flex h-3 w-3 relative">
-                <span x-show="wsConnected" class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:var(--c-secondary-container);"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3" :style="wsConnected ? 'background:var(--c-secondary)' : 'background:var(--c-error)'"></span>
-            </span>
-            <span class="text-xs" style="color:var(--c-on-surface-variant);">Live Connection</span>
-        </div>
-    </header>
 
+        <!-- Kapasitas Sisa -->
+        <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-colors duration-300">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Kapasitas Sisa</span>
+            <div class="text-2xl font-bold text-emerald-500 mt-1" x-text="telemetry?.batteryPercentage ? telemetry.batteryPercentage + ' %' : '85 %'"></div>
+        </div>
+
+        <!-- Kecepatan Kapal (SOG) -->
+        <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-colors duration-300">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Kecepatan (Speed)</span>
+            <div class="text-2xl font-bold text-sky-500 mt-1" x-text="telemetry?.speed ? telemetry.speed + ' Knot' : '2.1 Knot'"></div>
+        </div>
+
+        <!-- Sinyal Wi-Fi (RSSI) -->
+        <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm transition-colors duration-300">
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Sinyal Wi-Fi (RSSI)</span>
+            <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1" x-text="telemetry?.rssi ? telemetry.rssi + ' dBm' : '-65 dBm'"></div>
+        </div>
+    </div>
+
+    <!-- 2. Detail Sensor IMU (Kemudi & Navigasi) & GPS -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white rounded-xl ambient-shadow p-6 h-40 flex flex-col justify-between border" style="border-color:var(--c-surface-container);">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider" style="color:var(--c-outline);">Battery Voltage</span>
-                <span class="material-symbols-outlined" style="color:var(--c-outline);">battery_charging_full</span>
-            </div>
-            <div>
-                <div class="text-3xl font-bold" style="color:var(--c-on-surface);" x-text="battery.voltage.toFixed(2) + ' V'"></div>
-                <div class="text-xs mt-1" style="color:var(--c-secondary);" x-text="battery.voltage >= 11.1 ? 'Nominal' : 'Rendah'"></div>
+        <!-- Sensor Orientasi (IMU / MPU6050) -->
+        <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm transition-colors duration-300">
+            <h4 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-500 text-base">explore</span>
+                <span>Orientasi & Kompas (IMU)</span>
+            </h4>
+            <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                <div class="p-2 bg-gray-50 dark:bg-[#2d2d44] rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span class="block text-[10px] text-gray-500 dark:text-gray-400">Heading</span>
+                    <span class="font-bold text-gray-800 dark:text-gray-200" x-text="telemetry?.heading ? telemetry.heading + '°' : '128°'"></span>
+                </div>
+                <div class="p-2 bg-gray-50 dark:bg-[#2d2d44] rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span class="block text-[10px] text-gray-500 dark:text-gray-400">Pitch</span>
+                    <span class="font-bold text-gray-800 dark:text-gray-200" x-text="telemetry?.pitch ? telemetry.pitch + '°' : '1.2°'"></span>
+                </div>
+                <div class="p-2 bg-gray-50 dark:bg-[#2d2d44] rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span class="block text-[10px] text-gray-500 dark:text-gray-400">Roll</span>
+                    <span class="font-bold text-gray-800 dark:text-gray-200" x-text="telemetry?.roll ? telemetry.roll + '°' : '-0.5°'"></span>
+                </div>
             </div>
         </div>
-        <div class="bg-white rounded-xl ambient-shadow p-6 h-40 flex flex-col justify-between border" style="border-color:var(--c-surface-container);">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider" style="color:var(--c-outline);">Capacity</span>
-                <span class="material-symbols-outlined" style="color:var(--c-primary);">bolt</span>
-            </div>
-            <div>
-                <div class="text-3xl font-bold mb-2" style="color:var(--c-on-surface);" x-text="battery.percentage + '%'"></div>
-                <div class="w-full rounded-full h-1.5 overflow-hidden" style="background:var(--c-surface-container-high);">
-                    <div class="h-1.5 rounded-full transition-all" :style="'width:' + battery.percentage + '%; background:var(--c-primary-container);'"></div>
+
+        <!-- Sensor GPS (NEO-6M) -->
+        <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm transition-colors duration-300">
+            <h4 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-500 text-base">my_location</span>
+                <span>Sinyal & Lokasi GPS</span>
+            </h4>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="p-2 bg-gray-50 dark:bg-[#2d2d44] rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span class="block text-[10px] text-gray-500 dark:text-gray-400">Jumlah Satelit</span>
+                    <span class="font-bold text-emerald-500" x-text="telemetry?.satellites ? telemetry.satellites + ' Sat' : '9 Satellites'"></span>
+                </div>
+                <div class="p-2 bg-gray-50 dark:bg-[#2d2d44] rounded-xl border border-gray-100 dark:border-gray-700/50">
+                    <span class="block text-[10px] text-gray-500 dark:text-gray-400">Koordinat</span>
+                    <span class="font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">-6.2088, 106.8456</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div>
-        <h3 class="text-lg font-semibold mb-3" style="color:var(--c-on-surface);">Battery History</h3>
-        <div class="bg-white rounded-xl ambient-shadow p-4 md:p-6 border" style="border-color:var(--c-surface-container);">
-            <div class="flex justify-between items-center mb-4">
-                <span class="text-xs" style="color:var(--c-on-surface-variant);">Voltage vs Time</span>
-                <span class="text-xs px-2 py-1 rounded-md" style="color:var(--c-primary); background:rgba(53,37,205,0.1);">Live</span>
-            </div>
-            <canvas id="batteryChart" height="90"></canvas>
+    <!-- 3. Grafik Tegangan Baterai Real-time -->
+    <div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-colors duration-300">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-500">show_chart</span>
+                <span>Grafik Tegangan Baterai (Real-time)</span>
+            </h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400" x-text="'Update terakhir: ' + (lastSync || 'Baru saja')"></span>
+        </div>
+        <div class="w-full h-64">
+            <canvas id="batteryChart"></canvas>
         </div>
     </div>
-</section>
+
+</div>

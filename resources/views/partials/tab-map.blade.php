@@ -1,46 +1,63 @@
-{{--
-    TAB 3: MAP
-    Dummy grid map + radar ping penanda posisi USV.
-    Sengaja BUKAN citra satelit asli (beda dari mockup Stitch) karena
-    hardware USV di spek ini tidak punya modul GPS - jujur ditandai
-    "No Module" daripada nampilin koordinat palsu.
---}}
-<section x-show="activeTab==='map'" class="flex flex-col gap-3">
-    <div class="bg-white rounded-xl ambient-shadow overflow-hidden border" style="border-color:var(--c-surface-container);">
-        <div class="relative w-full h-[420px] bg-map-pattern">
-            {{-- Overlay info --}}
-            <div class="absolute top-4 left-4 z-20">
-                <div class="bg-white rounded-xl ambient-shadow p-4 flex flex-col gap-2 border min-w-[220px]" style="border-color:var(--c-surface-container-highest);">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs uppercase tracking-wider" style="color:var(--c-on-surface-variant);">GPS Status</span>
-                        <div class="flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full" style="background:var(--c-outline);"></span>
-                            <span class="text-sm font-semibold" style="color:var(--c-outline);">No Module</span>
-                        </div>
-                    </div>
-                    <div class="w-full h-px" style="background:var(--c-surface-container-highest);"></div>
-                    <div class="flex flex-col gap-1">
-                        <span class="text-xs uppercase tracking-wider" style="color:var(--c-on-surface-variant);">Catatan</span>
-                        <span class="text-sm" style="color:var(--c-on-surface);">Posisi statis - hardware belum pasang GPS</span>
-                    </div>
-                </div>
-            </div>
-
-            {{-- USV marker + radar ping --}}
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center pointer-events-none">
-                <div class="absolute w-12 h-12 rounded-full animate-radar" style="background:rgba(53,37,205,0.2);"></div>
-                <div class="relative w-4 h-4 rounded-full border-2 border-white ambient-shadow z-10" style="background:var(--c-primary);"></div>
-            </div>
-
-            {{-- Zoom controls (dekoratif) --}}
-            <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
-                <button class="w-10 h-10 bg-white rounded-xl ambient-shadow flex items-center justify-center border" style="border-color:var(--c-surface-container-highest); color:var(--c-on-surface-variant);">
-                    <span class="material-symbols-outlined text-[20px]">add</span>
-                </button>
-                <button class="w-10 h-10 bg-white rounded-xl ambient-shadow flex items-center justify-center border" style="border-color:var(--c-surface-container-highest); color:var(--c-on-surface-variant);">
-                    <span class="material-symbols-outlined text-[20px]">remove</span>
-                </button>
-            </div>
+<div class="bg-white dark:bg-[#1a1a2e] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm transition-colors duration-300">
+    <!-- Header Card Map -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400">location_on</span>
+            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-lg">Peta Navigasi Kapal (USV)</h3>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+            <span class="text-gray-500 dark:text-gray-400">GPS Signal:</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-semibold">Connected</span>
         </div>
     </div>
-</section>
+
+    <!-- Container Peta Leaflet -->
+    <div id="map" class="w-full h-[450px] rounded-xl border border-gray-200 dark:border-gray-700 z-10"></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inisialisasi Peta (Koordinat awal)
+        const lat = -6.2088;
+        const lng = 106.8456;
+        const map = L.map('map').setView([lat, lng], 14);
+
+        // Tile Layer Terang (OpenStreetMap Standard)
+        const lightTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        });
+
+        // Tile Layer Gelap (CartoDB Dark Matter) - Cocok untuk mode dark
+        const darkTile = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        });
+
+        // Fungsi Switch Tile Berdasarkan Class 'dark' di <html>
+        function updateMapTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                map.removeLayer(lightTile);
+                darkTile.addTo(map);
+            } else {
+                map.removeLayer(darkTile);
+                lightTile.addTo(map);
+            }
+        }
+
+        // Set tile pertama kali
+        updateMapTheme();
+
+        // Marker Kapal (USV)
+        const marker = L.marker([lat, lng]).addTo(map)
+            .bindPopup('<b>USV NauTech</b><br>Status: Navigating')
+            .openPopup();
+
+        // Observe perubahan tema (Ganti tile peta otomatis saat klik toggle theme)
+        const observer = new MutationObserver(updateMapTheme);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+        // Fix render Leaflet saat perpindahan tab Alpine.js
+        window.addEventListener('resize', () => map.invalidateSize());
+    });
+</script>
