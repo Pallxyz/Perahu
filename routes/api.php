@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\TtsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BatteryLogController;
+
 
 Route::post('/chat', [ChatController::class, 'send']);
 Route::get('/chat/history', [ChatController::class, 'history']);
 Route::get('/product-info', [ChatController::class, 'listProductInfo']);
+Route::post('/tts', [TtsController::class, 'speak']);
 
 Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/battery-logs', [BatteryLogController::class, 'store']);
