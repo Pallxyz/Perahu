@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\SocialAuthController;
+
 
 // Redirect halaman utama ke dashboard
 Route::get('/', function () {
@@ -26,6 +28,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('chatbot');
     })->name('chatbot');
 
+});
+
+// social
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
+        ->name('social.redirect');
+
+    Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+        ->name('social.callback');
 });
 
 // File route otentikasi tambahan (login, register, dll)
