@@ -196,7 +196,11 @@
                         </button>
                         
                         <!-- TAB MAP (Ditambahkan $nextTick agar peta tidak blank/abu-abu saat pertama kali dibuka) -->
+<<<<<<< Updated upstream
                         <button @click="activeTab = 'map'; sidebarOpen = false; $nextTick(() => { if(window.leafletMap) window.leafletMap.invalidateSize(); })" 
+=======
+                        <button @click="activeTab = 'map'; $nextTick(() => { if(window.leafletMap) window.leafletMap.invalidateSize(); })" 
+>>>>>>> Stashed changes
                                 :class="activeTab === 'map' ? 'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-500/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-indigo-600 dark:hover:text-indigo-400'" 
                                 class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200">
                             <i class="bi bi-geo-alt text-lg"></i>
