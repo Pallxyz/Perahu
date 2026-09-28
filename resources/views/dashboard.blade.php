@@ -60,7 +60,14 @@
     
                         const now = new Date();
                         this.lastSync = now.toLocaleTimeString();
-    
+
+                        // --- UPDATE POSISI PETA LEAFLET ---
+                        if (data.lat && data.lng && window.leafletMap && window.usvMarker) {
+                            const newPos = [parseFloat(data.lat), parseFloat(data.lng)];
+                            window.usvMarker.setLatLng(newPos);
+                            window.leafletMap.panTo(newPos);
+                        }
+
                         if (data.voltage && this.batteryChart) {
                             this.updateChart(this.lastSync, data.voltage);
                         }
@@ -68,9 +75,8 @@
                         console.log('Pesan dari ESP32 (Non-JSON):', event.data);
                     }
                 };
-            } catch (e) {
-                this.wsConnected = false;
-                alert('Gagal menghubungkan ke IP tersebut!');
+            } catch (err) {
+                console.error('Gagal membuat koneksi WebSocket:', err);
             }
         },
     
@@ -188,12 +194,11 @@
                             <i class="bi bi-activity text-lg"></i>
                             <span>Telemetry</span>
                         </button>
-
-                        <button @click="activeTab = 'map'; sidebarOpen = false"
-                            :class="activeTab === 'map' ?
-                                'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-500/20' :
-                                'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-indigo-600 dark:hover:text-indigo-400'"
-                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200">
+                        
+                        <!-- TAB MAP (Ditambahkan $nextTick agar peta tidak blank/abu-abu saat pertama kali dibuka) -->
+                        <button @click="activeTab = 'map'; sidebarOpen = false; $nextTick(() => { if(window.leafletMap) window.leafletMap.invalidateSize(); })" 
+                                :class="activeTab === 'map' ? 'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-500/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-indigo-600 dark:hover:text-indigo-400'" 
+                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200">
                             <i class="bi bi-geo-alt text-lg"></i>
                             <span>Map</span>
                         </button>
@@ -257,7 +262,7 @@
                         </div>
                     </div>
 
-                    <!-- User Profile Dropdown (Pengganti Navbar Atas) -->
+                    <!-- User Profile Dropdown -->
                     <div class="relative" @click.outside="profileDropdownOpen = false">
                         <button @click="profileDropdownOpen = !profileDropdownOpen"
                             class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-[#252542] text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#2d2d50] transition text-sm">
@@ -334,7 +339,7 @@
                         </div>
                     </div>
 
-                    <!-- Area Partials (Tampil Sesuai Tab Aktif) -->
+                    <!-- Area Partials -->
                     <div x-show="activeTab === 'control'" x-cloak>
                         @include('partials.tab-control')
                     </div>

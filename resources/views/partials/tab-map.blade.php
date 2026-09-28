@@ -17,47 +17,42 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Inisialisasi Peta (Koordinat awal)
         const lat = -6.2088;
         const lng = 106.8456;
-        const map = L.map('map').setView([lat, lng], 14);
+        
+        // Simpan instance ke window agar bisa diakses dari luar
+        window.leafletMap = L.map('map').setView([lat, lng], 15);
 
-        // Tile Layer Terang (OpenStreetMap Standard)
         const lightTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap'
         });
 
-        // Tile Layer Gelap (CartoDB Dark Matter) - Cocok untuk mode dark
         const darkTile = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap &copy; CARTO'
         });
 
-        // Fungsi Switch Tile Berdasarkan Class 'dark' di <html>
         function updateMapTheme() {
             if (document.documentElement.classList.contains('dark')) {
-                map.removeLayer(lightTile);
-                darkTile.addTo(map);
+                window.leafletMap.removeLayer(lightTile);
+                darkTile.addTo(window.leafletMap);
             } else {
-                map.removeLayer(darkTile);
-                lightTile.addTo(map);
+                window.leafletMap.removeLayer(darkTile);
+                lightTile.addTo(window.leafletMap);
             }
         }
 
-        // Set tile pertama kali
         updateMapTheme();
 
-        // Marker Kapal (USV)
-        const marker = L.marker([lat, lng]).addTo(map)
+        // Simpan marker ke window
+        window.usvMarker = L.marker([lat, lng]).addTo(window.leafletMap)
             .bindPopup('<b>USV NauTech</b><br>Status: Navigating')
             .openPopup();
 
-        // Observe perubahan tema (Ganti tile peta otomatis saat klik toggle theme)
         const observer = new MutationObserver(updateMapTheme);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-        // Fix render Leaflet saat perpindahan tab Alpine.js
-        window.addEventListener('resize', () => map.invalidateSize());
+        window.addEventListener('resize', () => window.leafletMap?.invalidateSize());
     });
 </script>
