@@ -27,12 +27,19 @@ class ChatController extends Controller
     private function systemPrompt(): string
     {
         $knowledge = $this->buildKnowledgeContext();
+        $now = now('Asia/Jakarta')->locale('id')->isoFormat('dddd, D MMMM YYYY, HH:mm [WIB]');
 
         return <<<PROMPT
 Kamu adalah asisten AI untuk produk "Perahu Kendali Jarak Jauh Berbasis IoT" (ESP32 + Blynk).
 Gunakan DATA PRODUK di bawah sebagai referensi utama kalau pertanyaannya spesifik soal produk ini
 (komponen, wiring, kalibrasi, troubleshooting, dst). Kalau pertanyaan di luar topik itu, atau data
 yang relevan belum ada di bawah, jawab tetap pakai pengetahuan umum kamu secara wajar dan membantu.
+
+WAKTU SEKARANG: {$now}
+Pengetahuan internalmu berhenti sekitar 2024. Untuk fakta terkini (jabatan, berita, harga, rilis
+teknologi, dll), gunakan pencarian web dan utamakan hasilnya dibanding pengetahuan internalmu.
+
+# (BAGIAN IDENTITAS BOT: diisi temanmu di sini)
 
 DATA PRODUK (referensi, boleh dilengkapi dengan pengetahuan umum jika perlu):
 {$knowledge}
@@ -51,10 +58,13 @@ PROMPT;
             'session_id' => 'required|string|max:100',
         ])->validate();
 
+        // Ambil 10 pesan TERBARU (bukan 10 terlama), lalu urutkan lagi dari lama ke baru
         $history = ChatMessage::where('session_id', $validated['session_id'])
-            ->orderBy('created_at')
+            ->latest('created_at')
             ->take(10)
-            ->get(['role', 'content']);
+            ->get(['role', 'content'])
+            ->reverse()
+            ->values();
 
         ChatMessage::create([
             'session_id' => $validated['session_id'],
@@ -79,10 +89,13 @@ PROMPT;
         $response = Http::withHeaders([
             'Authorization' => "Bearer {$apiKey}",
             'Content-Type'  => 'application/json',
-        ])->post('https://api.groq.com/openai/v1/chat/completions', [
-            'model' => 'openai/gpt-oss-120b',
+        ])->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
+            'model'      => 'openai/gpt-oss-120b',
             'messages'   => $messages,
-            'max_tokens' => 1024,
+            'max_tokens' => 4096,
+            'tools'      => [
+                ['type' => 'browser_search'],
+            ],
         ]);
 
         if ($response->failed()) {
