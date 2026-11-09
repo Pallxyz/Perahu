@@ -212,6 +212,13 @@
                             <i class="bi bi-cpu text-lg"></i>
                             <span>System</span>
                         </button>
+
+                        <!-- Link ke halaman Chatbot AI (halaman terpisah, bukan tab) -->
+                        <a href="{{ route('chatbot') }}"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-indigo-600 dark:hover:text-indigo-400">
+                            <i class="bi bi-robot text-lg"></i>
+                            <span>Chatbot AI</span>
+                        </a>
                     </nav>
                 </div>
 
