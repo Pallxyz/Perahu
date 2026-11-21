@@ -1,3 +1,6 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <x-app-layout>
     <div x-data="{
         activeTab: 'control',
@@ -12,7 +15,7 @@
         ws: null,
         lastSync: '-',
     
-        // Object penampung data telemetri real-time dari ESP32
+        // Object penampung data telemetri real-time dari ESP32 (Default: Cirebon -6.7320, 108.5523)
         telemetry: {
             voltage: '0.0',
             batteryPercentage: 0,
@@ -22,8 +25,8 @@
             pitch: 0,
             roll: 0,
             satellites: 0,
-            lat: '-6.2088',
-            lng: '106.8456'
+            lat: '-6.7320',
+            lng: '108.5523'
         },
     
         batteryChart: null,
@@ -61,11 +64,15 @@
                         const now = new Date();
                         this.lastSync = now.toLocaleTimeString();
 
-                        // --- UPDATE POSISI PETA LEAFLET ---
+                        // --- UPDATE POSISI PETA & JEJAK LINTASAN LEAFLET ---
                         if (data.lat && data.lng && window.leafletMap && window.usvMarker) {
                             const newPos = [parseFloat(data.lat), parseFloat(data.lng)];
                             window.usvMarker.setLatLng(newPos);
                             window.leafletMap.panTo(newPos);
+
+                            if (window.usvTrail) {
+                                window.usvTrail.addLatLng(newPos);
+                            }
                         }
 
                         if (data.voltage && this.batteryChart) {
@@ -84,7 +91,7 @@
             if (this.ws && this.wsConnected) {
                 this.ws.send(JSON.stringify(command));
             } else {
-                alert('ESP32 Belum Terhubung!');
+                console.warn('Perintah ditahan (ESP32 belum terhubung):', command);
             }
         },
     
@@ -193,15 +200,6 @@
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200">
                             <i class="bi bi-activity text-lg"></i>
                             <span>Telemetry</span>
-                        </button>
-                        
-                        <!-- TAB MAP (Ditambahkan $nextTick agar peta tidak blank/abu-abu saat pertama kali dibuka) -->
-                        <button @click="activeTab = 'map'; sidebarOpen = false; $nextTick(() => { if(window.leafletMap) window.leafletMap.invalidateSize(); })" 
-                        <button @click="activeTab = 'map'; $nextTick(() => { if(window.leafletMap) window.leafletMap.invalidateSize(); })" 
-                                :class="activeTab === 'map' ? 'bg-indigo-600 text-white font-semibold shadow-md shadow-indigo-500/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-indigo-600 dark:hover:text-indigo-400'" 
-                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition duration-200">
-                            <i class="bi bi-geo-alt text-lg"></i>
-                            <span>Map</span>
                         </button>
 
                         <button @click="activeTab = 'system'; sidebarOpen = false"
@@ -354,10 +352,6 @@
 
                     <div x-show="activeTab === 'telemetry'" x-cloak>
                         @include('partials.tab-telemetry')
-                    </div>
-
-                    <div x-show="activeTab === 'map'" x-cloak>
-                        @include('partials.tab-map')
                     </div>
 
                     <div x-show="activeTab === 'system'" x-cloak>
