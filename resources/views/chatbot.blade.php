@@ -184,6 +184,43 @@
         cursor: not-allowed;
     }
 
+    /* ===== Tombol mic ===== */
+    .input-bar button.mic-btn {
+        padding: 0 14px;
+        font-size: 18px;
+        background: #3b82f6;
+        color: #fff;
+    }
+
+    .input-bar button.mic-btn.listening {
+        background: #ef4444;
+        animation: micPulse 1.2s infinite;
+    }
+
+    .input-bar button[hidden] {
+        display: none;
+    }
+
+    /* Tombol undo (batalkan & edit pesan terakhir) */
+    .input-bar button.undo-btn {
+        padding: 0 12px;
+        font-size: 18px;
+        background: #f59e0b;
+        color: #1f1300;
+    }
+
+    /* Saat bot sedang berpikir/bicara, tombol mic berubah jadi tombol STOP */
+    .input-bar button.mic-btn.stop-mode {
+        background: #ef4444;
+        animation: none;
+    }
+
+    @keyframes micPulse {
+        0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+        70%  { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
     @media (max-width: 760px) {
         body {
             flex-direction: column;
@@ -233,6 +270,8 @@
     <div class="messages" id="messages"></div>
     <div class="input-bar">
         <input type="text" id="messageInput" placeholder="Tulis pesan..." autocomplete="off">
+        <button id="undoBtn" class="undo-btn" type="button" title="Batalkan & edit pesan terakhir" hidden>↩</button>
+        <button id="micBtn" class="mic-btn" type="button" title="Bicara">🎤</button>
         <button id="sendBtn">Kirim</button>
     </div>
 </div>
@@ -405,6 +444,15 @@ window.stopTune = function () {
     const inputEl = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
     const statusEl = document.getElementById("statusText");
+    const undoBtn = document.getElementById("undoBtn");
+
+    // State untuk fitur STOP & UNDO
+    let abortCtrl = null;        // buat membatalkan request yang lagi jalan
+    let stopRequested = false;   // penanda: user menekan stop
+    let typingState = null;      // efek mengetik yang sedang berjalan
+    let audioEndResolver = null; // buat "melepas" await saat audio dihentikan paksa
+    let lastUserText = "";       // pesan user terakhir (buat di-edit lewat undo)
+    let lastUserBubble = null;
 
     function addBubble(text, role) {
         const div = document.createElement("div");
@@ -438,10 +486,63 @@ window.stopTune = function () {
 
                 if (i >= totalChars) {
                     clearInterval(interval);
+                    typingState = null;
                     resolve(div);
                 }
             }, intervalMs);
+
+            typingState = { interval, resolve: () => resolve(div) };
         });
+    }
+
+    // Hentikan efek mengetik di tempat (teks berhenti di huruf terakhir yang sudah muncul)
+    function haltTyping() {
+        if (!typingState) return;
+        clearInterval(typingState.interval);
+        typingState.resolve();
+        typingState = null;
+    }
+
+    // Ubah tampilan tombol mic <-> stop, dan atur tombol undo
+    function setBusyUI(busy) {
+        sendBtn.disabled = busy;
+        undoBtn.hidden = busy || !lastUserBubble;
+
+        if (busy) {
+            micBtn.classList.add("stop-mode");
+            micBtn.textContent = "⏹";
+            micBtn.title = "Hentikan (Esc)";
+            micBtn.disabled = false;
+        } else {
+            micBtn.classList.remove("stop-mode");
+            micBtn.textContent = "🎤";
+            micBtn.title = "Bicara";
+            micBtn.disabled = !recognition;
+        }
+    }
+
+    // STOP: hentikan suara, teks yang sedang mengetik, dan request yang masih menunggu
+    function stopAll() {
+        if (!isSending) return;
+        stopRequested = true;
+
+        if (abortCtrl) abortCtrl.abort();
+
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+        haltTyping();
+        if (audioEndResolver) {
+            audioEndResolver();
+            audioEndResolver = null;
+        }
+
+        window.setVrmMode('idle');
+        statusEl.textContent = 'Dihentikan';
+        setTimeout(() => {
+            if (statusEl.textContent === 'Dihentikan') statusEl.textContent = 'Siap membantu';
+        }, 1500);
     }
 
     let currentAudio = null;
@@ -472,7 +573,7 @@ window.stopTune = function () {
     };
 
     // Siapkan audio terlebih dahulu, lalu mulai mengetik tepat saat suara mulai diputar
-    async function speakAndType(text) {
+    async function speakAndType(text, signal) {
         if (currentAudio) {
             currentAudio.pause();
             currentAudio = null;
@@ -484,7 +585,8 @@ window.stopTune = function () {
             const res = await fetch('/api/tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ text }),
+                signal
             });
 
             if (!res.ok) {
@@ -492,6 +594,8 @@ window.stopTune = function () {
             }
 
             const audioBlob = await res.blob();
+            if (stopRequested) return;
+
             audioUrl = URL.createObjectURL(audioBlob);
             const audio = new Audio(audioUrl);
             currentAudio = audio;
@@ -502,6 +606,7 @@ window.stopTune = function () {
                 audio.addEventListener('error', () => reject(new Error('Audio tidak bisa dimuat')), { once: true });
                 audio.load();
             });
+            if (stopRequested) return;
 
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -509,6 +614,7 @@ window.stopTune = function () {
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
+            if (stopRequested) return;
             setupAnalyser(audio);
 
             const durationMs = Number.isFinite(audio.duration) && audio.duration > 0
@@ -532,18 +638,25 @@ window.stopTune = function () {
             await Promise.all([
                 typingPromise,
                 new Promise((resolve) => {
+                    audioEndResolver = resolve; // supaya tombol stop bisa "melepas" await ini
                     if (audio.ended) return resolve();
                     audio.addEventListener('ended', resolve, { once: true });
                     audio.addEventListener('error', resolve, { once: true });
                 })
             ]);
+            audioEndResolver = null;
+            if (audioUrl) URL.revokeObjectURL(audioUrl);
         } catch (err) {
+            if (audioUrl) URL.revokeObjectURL(audioUrl);
+
+            // Dihentikan user -> bukan error, jangan tampilkan apa-apa lagi
+            if (stopRequested || err.name === 'AbortError') return;
+
             console.warn('Gagal memutar suara:', err);
             window.setVrmMode('idle');
             statusEl.textContent = 'Suara gagal diputar';
 
             // Kalau TTS gagal, jawaban tetap muncul dan tidak membuat chat macet
-            if (audioUrl) URL.revokeObjectURL(audioUrl);
             await typeBubble(text, 'bot', Math.max(1000, text.length * 25));
         }
     }
@@ -555,10 +668,13 @@ window.stopTune = function () {
         const text = inputEl.value.trim();
         if (!text) return;
         isSending = true;
+        stopRequested = false;
+        abortCtrl = new AbortController();
 
-        addBubble(text, "user");
+        lastUserText = text;
+        lastUserBubble = addBubble(text, "user");
         inputEl.value = "";
-        sendBtn.disabled = true;
+        setBusyUI(true); // tombol mic berubah jadi STOP selama bot berpikir & bicara
 
         const typingBubble = addBubble("Mengetik...", "bot typing");
         statusEl.textContent = "Berpikir...";
@@ -568,29 +684,154 @@ window.stopTune = function () {
             const res = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text, session_id: sessionId })
+                body: JSON.stringify({ message: text, session_id: sessionId }),
+                signal: abortCtrl.signal
             });
             const data = await res.json();
             typingBubble.remove();
+            if (stopRequested) return;
 
             if (!res.ok) {
                 addBubble(data.error || "Maaf, terjadi kesalahan.", "bot");
                 statusEl.textContent = "Siap membantu";
                 window.setVrmMode('idle');
             } else {
-                await speakAndType(data.reply);
+                await speakAndType(data.reply, abortCtrl.signal);
             }
         } catch (err) {
             typingBubble.remove();
-            addBubble("Gagal terhubung ke server. Pastikan backend sedang berjalan.", "bot");
-            statusEl.textContent = "Koneksi gagal";
-            window.setVrmMode('idle');
+            if (stopRequested || err.name === 'AbortError') {
+                window.setVrmMode('idle');
+            } else {
+                addBubble("Gagal terhubung ke server. Pastikan backend sedang berjalan.", "bot");
+                statusEl.textContent = "Koneksi gagal";
+                window.setVrmMode('idle');
+            }
         } finally {
-            sendBtn.disabled = false;
             isSending = false;
+            abortCtrl = null;
+            setBusyUI(false);
             inputEl.focus();
         }
     }
+
+    // ================== UNDO: batalkan & edit pesan terakhir ==================
+    undoBtn.addEventListener("click", () => {
+        if (isSending || !lastUserBubble) return;
+
+        const textBack = lastUserText;
+
+        // Hapus bubble user terakhir + semua bubble balasan setelahnya
+        let node = lastUserBubble;
+        while (node) {
+            const next = node.nextSibling;
+            node.remove();
+            node = next;
+        }
+
+        // Kembalikan teksnya ke kolom input biar bisa dibenerin
+        inputEl.value = textBack;
+        inputEl.focus();
+        inputEl.setSelectionRange(textBack.length, textBack.length);
+
+        lastUserBubble = null;
+        lastUserText = "";
+        undoBtn.hidden = true;
+        statusEl.textContent = "Siap membantu";
+
+        // Hapus juga dari riwayat di server supaya AI tidak "ingat" pesan yang dibatalkan
+        fetch("/api/chat/undo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId })
+        }).catch(() => {});
+    });
+
+    // Tombol Esc = stop (atau batalkan perekaman mic)
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (isSending) {
+            stopAll();
+        } else if (isListening && recognition) {
+            heardSpeech = false;
+            recognition.abort();
+        }
+    });
+
+    // ================== INPUT SUARA (MIC) ==================
+    const micBtn = document.getElementById("micBtn");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    let recognition = null;
+    let isListening = false;
+    let heardSpeech = false;
+    let finalTranscript = "";
+
+    if (!SpeechRecognition) {
+        micBtn.disabled = true;
+        micBtn.title = "Browser ini belum mendukung input suara (pakai Chrome atau Edge)";
+    } else {
+        recognition = new SpeechRecognition();
+        recognition.lang = "id-ID";
+        recognition.continuous = false;     // berhenti otomatis begitu kamu selesai ngomong
+        recognition.interimResults = true;  // teks muncul live di kolom input saat kamu bicara
+
+        recognition.onstart = () => {
+            isListening = true;
+            heardSpeech = false;
+            finalTranscript = "";
+            micBtn.classList.add("listening");
+            statusEl.textContent = "Mendengarkan...";
+        };
+
+        recognition.onresult = (e) => {
+            let interim = "";
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const t = e.results[i][0].transcript;
+                if (e.results[i].isFinal) finalTranscript += t;
+                else interim += t;
+            }
+            heardSpeech = true;
+            inputEl.value = (finalTranscript + interim).trim();
+        };
+
+        recognition.onerror = (e) => {
+            heardSpeech = false;
+            if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+                statusEl.textContent = "Izin mikrofon ditolak";
+            } else if (e.error === "no-speech") {
+                statusEl.textContent = "Tidak ada suara terdeteksi";
+            } else if (e.error !== "aborted") {
+                statusEl.textContent = "Mic error: " + e.error;
+            }
+        };
+
+        // Dipanggil saat kamu berhenti ngomong -> langsung kirim ke chatbot
+        recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove("listening");
+
+            if (heardSpeech && inputEl.value.trim() && !isSending) {
+                sendMessage();
+            } else if (statusEl.textContent === "Mendengarkan...") {
+                statusEl.textContent = "Siap membantu";
+            }
+        };
+    }
+
+    micBtn.addEventListener("click", () => {
+        if (isSending) { stopAll(); return; } // saat bot sibuk, tombol ini = STOP
+        if (!recognition) return;
+
+        if (isListening) {
+            recognition.stop(); // berhenti manual -> hasil tetap diproses & dikirim
+            return;
+        }
+
+        inputEl.value = "";
+        try { recognition.start(); } catch (err) { console.warn(err); }
+    });
+    // =======================================================
 
     sendBtn.addEventListener("click", sendMessage);
     inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });

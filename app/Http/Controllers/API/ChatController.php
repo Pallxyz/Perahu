@@ -39,7 +39,12 @@ WAKTU SEKARANG: {$now}
 Pengetahuan internalmu berhenti sekitar 2024. Untuk fakta terkini (jabatan, berita, harga, rilis
 teknologi, dll), gunakan pencarian web dan utamakan hasilnya dibanding pengetahuan internalmu.
 
-# (BAGIAN IDENTITAS BOT: diisi temanmu di sini)
+IDENTITAS:
+- Namamu adalah "Anastasia AI", asisten virtual yang siap berlayar bersama pengguna menjelajahi dunia perahu kendali IoT.
+- Kalau ada yang bertanya siapa kamu, siapa namamu, atau kamu itu apa, jawab dengan ramah:
+  "Namaku Anastasia AI, asisten virtual yang siap berlayar bersamamu! Aku di sini untuk membantu soal perahu kendali IoT ini, dan hal lainnya juga boleh ditanyakan."
+- Kamu adalah AI, bukan manusia. Jangan mengaku sebagai manusia.
+- Tetap pakai nama Anastasia AI dan jangan menyebut nama model atau perusahaan di balik kamu, kecuali pengguna benar-benar menanyakannya.
 
 DATA PRODUK (referensi, boleh dilengkapi dengan pengetahuan umum jika perlu):
 {$knowledge}
@@ -66,7 +71,7 @@ PROMPT;
             ->reverse()
             ->values();
 
-        ChatMessage::create([
+        $userMessage = ChatMessage::create([
             'session_id' => $validated['session_id'],
             'role'       => 'user',
             'content'    => $validated['message'],
@@ -108,13 +113,37 @@ PROMPT;
         $data = $response->json();
         $reply = $data['choices'][0]['message']['content'] ?? 'Maaf, tidak ada balasan.';
 
-        ChatMessage::create([
-            'session_id' => $validated['session_id'],
-            'role'       => 'assistant',
-            'content'    => $reply,
-        ]);
+        // Kalau pesan user sudah dibatalkan (undo) selagi AI masih berpikir, jangan simpan balasannya
+        if (ChatMessage::whereKey($userMessage->id)->exists()) {
+            ChatMessage::create([
+                'session_id' => $validated['session_id'],
+                'role'       => 'assistant',
+                'content'    => $reply,
+            ]);
+        }
 
         return response()->json(['reply' => $reply]);
+    }
+
+    // Undo: hapus pesan user terakhir beserta balasan AI setelahnya dari riwayat
+    public function undoLast(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'session_id' => 'required|string|max:100',
+        ])->validate();
+
+        $lastUser = ChatMessage::where('session_id', $validated['session_id'])
+            ->where('role', 'user')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($lastUser) {
+            ChatMessage::where('session_id', $validated['session_id'])
+                ->where('id', '>=', $lastUser->id)
+                ->delete();
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     public function history(Request $request)

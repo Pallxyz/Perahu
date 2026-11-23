@@ -18,6 +18,18 @@ class TtsController extends Controller
             'text' => 'required|string|max:2000',
         ])->validate();
 
+        // Kamus pelafalan: tulisan di layar tetap "Anastasia", tapi yang dikirim ke
+        // ElevenLabs diganti ejaan fonetik supaya terdengar "Anastasya", bukan "Anasta-si-a".
+        // Mau tambah kata lain yang salah baca? Tinggal tambah pasangan di sini.
+        $pronunciations = [
+            'Anastasia' => 'Anastasya',
+        ];
+        $spokenText = str_ireplace(
+            array_keys($pronunciations),
+            array_values($pronunciations),
+            $validated['text']
+        );
+
         $apiKey = config('services.elevenlabs.key');
 
         $response = Http::withHeaders([
@@ -25,7 +37,7 @@ class TtsController extends Controller
             'Content-Type' => 'application/json',
             'Accept'       => 'audio/mpeg',
         ])->post('https://api.elevenlabs.io/v1/text-to-speech/' . self::VOICE_ID, [
-            'text'     => $validated['text'],
+            'text'     => $spokenText,
             'model_id' => 'eleven_multilingual_v2', // support banyak bahasa termasuk Indonesia
             'voice_settings' => [
                 'stability'        => 0.5,

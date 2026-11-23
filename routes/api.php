@@ -7,6 +7,7 @@ use App\Http\Controllers\BatteryLogController;
 
 
 Route::post('/chat', [ChatController::class, 'send']);
+Route::post('/chat/undo', [ChatController::class, 'undoLast']);
 Route::get('/chat/history', [ChatController::class, 'history']);
 Route::get('/product-info', [ChatController::class, 'listProductInfo']);
 Route::post('/tts', [TtsController::class, 'speak']);

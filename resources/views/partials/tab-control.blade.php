@@ -1,5 +1,6 @@
 <div x-data="{ 
     controlMode: 'wheel', // 'wheel' (Mode Putar) | 'dpad' (Mode D-Pad)
+    leftHanded: false, // false = roda/D-Pad di KANAN (default) | true = roda/D-Pad di KIRI
     throttle: 0, 
     maxThrottle: 100,
     steering: 90, 
@@ -289,6 +290,9 @@
     if (k === 'h') { triggerHorn(false); }
 "
 x-init="
+    try { leftHanded = localStorage.getItem('nautech_left_handed') === '1'; } catch (e) {}
+    $watch('leftHanded', v => { try { localStorage.setItem('nautech_left_handed', v ? '1' : '0'); } catch (e) {} });
+
     if (typeof activeTab === 'undefined' || activeTab === 'control') {
         setTimeout(() => {
             initMap();
@@ -337,6 +341,26 @@ class="select-none space-y-4">
 
         <!-- Tombol Cepat: Lampu Navigasi, Klakson & Status Mesin -->
         <div class="flex flex-wrap items-center gap-2">
+            <!-- Switch Slide: posisi Kiri / Kanan (roda kemudi / D-Pad) -->
+            <button type="button"
+                    role="switch"
+                    :aria-checked="leftHanded.toString()"
+                    @click="leftHanded = !leftHanded"
+                    :class="leftHanded
+                        ? 'bg-indigo-600/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-300'
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-200/70 dark:hover:bg-slate-700'"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer"
+                    title="Posisi roda kemudi / D-Pad: geser untuk pindah kiri atau kanan">
+                <span class="material-symbols-outlined text-base" x-text="leftHanded ? 'swipe_left' : 'swipe_right'"></span>
+                <span x-text="leftHanded ? 'Kiri' : 'Kanan'"></span>
+                <!-- Track + knob geser -->
+                <span class="relative inline-block w-9 h-5 rounded-full transition-colors duration-200"
+                      :class="leftHanded ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'">
+                    <span class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                          :class="leftHanded ? 'translate-x-0' : 'translate-x-4'"></span>
+                </span>
+            </button>
+
             <!-- Tombol Lampu Kapal -->
             <button type="button"
                     @click="toggleNavLight()"
@@ -376,11 +400,11 @@ class="select-none space-y-4">
     </div>
 
     <!-- MAIN COCKPIT CONTROLLER (Adaptif Light & Dark Mode) -->
-    <div class="relative bg-white dark:bg-[#1a1a2e] text-gray-800 dark:text-white border border-gray-200 dark:border-gray-800 rounded-3xl p-5 md:p-8 shadow-sm transition-colors duration-300 overflow-hidden">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+    <div class="relative bg-white dark:bg-[#1a1a2e] text-gray-800 dark:text-white border border-gray-200 dark:border-gray-800 rounded-3xl p-5 min-[560px]:p-3 md:p-8 shadow-sm transition-colors duration-300 overflow-hidden">
+        <div class="grid grid-cols-1 min-[560px]:grid-cols-12 gap-6 min-[560px]:gap-2 md:gap-6 items-center">
             
             <!-- SISI KIRI: KONTROL PENDUKUNG (Berubah Sesuai Mode) -->
-            <div class="md:col-span-4 order-2 md:order-1 flex flex-col items-center justify-center bg-slate-50/70 dark:bg-[#121222]/60 border border-gray-100 dark:border-gray-800/80 rounded-2xl p-5">
+            <div :class="leftHanded ? 'min-[560px]:order-3' : 'min-[560px]:order-1'" class="min-[560px]:col-span-4 order-2 flex flex-col items-center justify-center bg-slate-50/70 dark:bg-[#121222]/60 border border-gray-100 dark:border-gray-800/80 rounded-2xl p-5 min-[560px]:p-2 md:p-5">
                 
                 <!-- OPSI A: PEDAL GAS, MUNDUR & CRUISE LOCK (Mode Putar) -->
                 <div x-show="controlMode === 'wheel'" class="w-full flex flex-col items-center">
@@ -398,7 +422,7 @@ class="select-none space-y-4">
                                 :class="gear === 'REVERSE' && throttle > 0 
                                     ? 'bg-amber-500 text-white border-amber-400 scale-95 shadow-lg shadow-amber-500/30' 
                                     : 'bg-white dark:bg-[#1a1a2e] text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800'"
-                                class="w-24 h-28 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
+                                class="w-24 h-28 min-[560px]:w-16 min-[560px]:h-20 md:w-24 md:h-28 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
                             <span class="material-symbols-outlined text-3xl">keyboard_double_arrow_down</span>
                             <span class="text-xs font-bold tracking-wider mt-1">MUNDUR</span>
                         </button>
@@ -413,7 +437,7 @@ class="select-none space-y-4">
                                 :class="gear === 'FORWARD' && throttle > 0 
                                     ? 'bg-emerald-600 text-white border-emerald-400 scale-95 shadow-lg shadow-emerald-500/30' 
                                     : 'bg-white dark:bg-[#1a1a2e] text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800'"
-                                class="w-28 h-36 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
+                                class="w-28 h-36 min-[560px]:w-[4.5rem] min-[560px]:h-28 md:w-28 md:h-36 rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
                             <span class="material-symbols-outlined text-4xl">keyboard_double_arrow_up</span>
                             <span class="text-sm font-black tracking-wider mt-1">GAS</span>
                         </button>
@@ -442,7 +466,7 @@ class="select-none space-y-4">
                             :class="engineOn 
                                 ? 'bg-red-600 hover:bg-red-500 border-red-400 shadow-lg shadow-red-500/30' 
                                 : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'"
-                            class="w-full py-3.5 px-4 rounded-2xl border-2 flex items-center justify-center gap-2 text-white font-black tracking-wider text-sm transition-all active:scale-95 cursor-pointer">
+                            class="w-full py-3.5 px-4 min-[560px]:max-md:px-2 min-[560px]:max-md:py-2.5 rounded-2xl border-2 flex items-center justify-center gap-2 text-white font-black tracking-wider text-sm min-[560px]:max-md:text-xs transition-all active:scale-95 cursor-pointer">
                         <span class="material-symbols-outlined text-2xl" x-text="engineOn ? 'stop_circle' : 'power_settings_new'"></span>
                         <span x-text="engineOn ? 'MATIKAN MESIN' : 'NYALAKAN MESIN'"></span>
                     </button>
@@ -479,8 +503,8 @@ class="select-none space-y-4">
 
             </div>
 
-            <!-- TENGAH: AREA KONTROL UTAMA (Roda Kemudi ATAU D-Pad) -->
-            <div class="md:col-span-5 order-1 md:order-2 flex flex-col items-center justify-center min-h-[260px]">
+            <!-- KANAN: AREA KONTROL UTAMA (Roda Kemudi ATAU D-Pad) -->
+            <div :class="leftHanded ? 'min-[560px]:order-1' : 'min-[560px]:order-3'" class="min-[560px]:col-span-5 order-1 flex flex-col items-center justify-center min-h-[260px] min-[560px]:min-h-0 md:min-h-[260px]">
                 
                 <!-- TAMPILAN 1: RODA KEMUDI KAPAL (Mode Putar) -->
                 <div x-show="controlMode === 'wheel'" class="flex flex-col items-center justify-center">
@@ -491,7 +515,7 @@ class="select-none space-y-4">
                          @pointermove="onWheelDrag($event)"
                          @pointerup="endWheelDrag()"
                          @pointercancel="endWheelDrag()"
-                         class="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
+                         class="relative w-56 h-56 min-[560px]:w-44 min-[560px]:h-44 md:w-64 md:h-64 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none">
                         
                         <!-- Ring Penanda Sudut Luar -->
                         <div class="absolute inset-0 rounded-full border-2 border-dashed border-gray-300 dark:border-slate-700/80 pointer-events-none"></div>
@@ -500,7 +524,7 @@ class="select-none space-y-4">
                         <!-- Visual Roda Kemudi Kapal (SVG) yang Berputar -->
                         <svg viewBox="0 0 200 200" 
                              :style="`transform: rotate(${wheelAngle}deg)`"
-                             class="w-52 h-52 sm:w-60 sm:h-60 drop-shadow-[0_8px_12px_rgba(79,70,229,0.18)] dark:drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] pointer-events-none transition-transform duration-75 ease-out">
+                             class="w-52 h-52 min-[560px]:w-40 min-[560px]:h-40 md:w-60 md:h-60 drop-shadow-[0_8px_12px_rgba(79,70,229,0.18)] dark:drop-shadow-[0_10px_15px_rgba(0,0,0,0.6)] pointer-events-none transition-transform duration-75 ease-out">
                             
                             <!-- Pegangan Luar Roda Kemudi (8 Spokes) -->
                             <g class="stroke-slate-400 dark:stroke-slate-600" stroke-width="8" stroke-linecap="round">
@@ -528,7 +552,7 @@ class="select-none space-y-4">
                                 :class="engineOn 
                                     ? 'bg-red-600 hover:bg-red-500 border-red-300 dark:border-red-400 shadow-[0_0_20px_rgba(239,68,68,0.5)]' 
                                     : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-300 dark:border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.45)]'"
-                                class="absolute z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex flex-col items-center justify-center text-white transition-all active:scale-90 cursor-pointer">
+                                class="absolute z-10 w-16 h-16 min-[560px]:w-12 min-[560px]:h-12 md:w-20 md:h-20 rounded-full border-2 flex flex-col items-center justify-center text-white transition-all active:scale-90 cursor-pointer">
                             <span class="material-symbols-outlined text-xl sm:text-2xl leading-none" 
                                   x-text="engineOn ? 'stop_circle' : 'power_settings_new'"></span>
                             <span class="text-[10px] sm:text-[11px] font-black tracking-wider mt-0.5 uppercase" 
@@ -542,7 +566,7 @@ class="select-none space-y-4">
                     <span class="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-400 mb-3"
                           x-text="engineOn ? 'Navigasi Arah (Tahan)' : 'Nyalakan Mesin Terlebih Dahulu'"></span>
                     
-                    <div class="grid grid-cols-3 gap-2.5 w-56 h-56 sm:w-60 sm:h-60" :class="!engineOn ? 'opacity-55' : ''">
+                    <div class="grid grid-cols-3 gap-2.5 min-[560px]:gap-1.5 w-56 h-56 min-[560px]:w-44 min-[560px]:h-44 md:w-60 md:h-60 md:gap-2.5" :class="!engineOn ? 'opacity-55' : ''">
                         <div></div>
                         <!-- D-Pad Atas (Maju) -->
                         <button type="button"
@@ -555,7 +579,7 @@ class="select-none space-y-4">
                                     ? 'bg-emerald-600 text-white border-emerald-400 scale-95 shadow-lg shadow-emerald-500/30' 
                                     : 'bg-slate-50 dark:bg-[#121222] text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800'"
                                 class="rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
-                            <span class="material-symbols-outlined text-4xl">keyboard_arrow_up</span>
+                            <span class="material-symbols-outlined text-4xl min-[560px]:max-md:text-2xl">keyboard_arrow_up</span>
                             <span class="text-[10px] font-black tracking-wider">MAJU</span>
                         </button>
                         <div></div>
@@ -571,7 +595,7 @@ class="select-none space-y-4">
                                     ? 'bg-indigo-600 text-white border-indigo-400 scale-95 shadow-lg shadow-indigo-500/30' 
                                     : 'bg-slate-50 dark:bg-[#121222] text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800'"
                                 class="rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
-                            <span class="material-symbols-outlined text-4xl">keyboard_arrow_left</span>
+                            <span class="material-symbols-outlined text-4xl min-[560px]:max-md:text-2xl">keyboard_arrow_left</span>
                             <span class="text-[10px] font-black tracking-wider">KIRI</span>
                         </button>
 
@@ -591,7 +615,7 @@ class="select-none space-y-4">
                                     ? 'bg-indigo-600 text-white border-indigo-400 scale-95 shadow-lg shadow-indigo-500/30' 
                                     : 'bg-slate-50 dark:bg-[#121222] text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800'"
                                 class="rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
-                            <span class="material-symbols-outlined text-4xl">keyboard_arrow_right</span>
+                            <span class="material-symbols-outlined text-4xl min-[560px]:max-md:text-2xl">keyboard_arrow_right</span>
                             <span class="text-[10px] font-black tracking-wider">KANAN</span>
                         </button>
 
@@ -607,7 +631,7 @@ class="select-none space-y-4">
                                     ? 'bg-amber-500 text-white border-amber-400 scale-95 shadow-lg shadow-amber-500/30' 
                                     : 'bg-slate-50 dark:bg-[#121222] text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800'"
                                 class="rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-75 touch-none cursor-pointer disabled:cursor-not-allowed">
-                            <span class="material-symbols-outlined text-4xl">keyboard_arrow_down</span>
+                            <span class="material-symbols-outlined text-4xl min-[560px]:max-md:text-2xl">keyboard_arrow_down</span>
                             <span class="text-[10px] font-black tracking-wider">MUNDUR</span>
                         </button>
                         <div></div>
@@ -616,8 +640,8 @@ class="select-none space-y-4">
 
             </div>
 
-            <!-- SISI KANAN: LAYAR INSTRUMENT / SPEEDOMETER + RUDDER BAR -->
-            <div class="md:col-span-3 order-3 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#121222] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 transition-colors">
+            <!-- TENGAH: LAYAR INSTRUMENT / SPEEDOMETER + RUDDER BAR -->
+            <div class="min-[560px]:col-span-3 order-3 min-[560px]:order-2 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#121222] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 min-[560px]:p-2 md:p-5 transition-colors">
                 <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-slate-400 mb-3">Instrumen Kapal</span>
                 
                 <!-- Status Gear -->
@@ -634,7 +658,7 @@ class="select-none space-y-4">
 
                 <!-- Angka Kecepatan -->
                 <div class="text-center my-1">
-                    <span class="text-4xl font-black tracking-tight text-gray-900 dark:text-white" x-text="throttle"></span>
+                    <span class="text-4xl min-[560px]:max-md:text-3xl font-black tracking-tight text-gray-900 dark:text-white" x-text="throttle"></span>
                     <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">%</span>
                 </div>
 
